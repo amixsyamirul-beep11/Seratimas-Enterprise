@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seratimas Enterprise</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#776a4a">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="locked">
+
+<!-- LOGIN -->
+<div id="login" class="login-wrap no-print">
+  <form id="loginForm" class="login-card" autocomplete="on">
+    <img src="icon.svg" class="login-icon" alt="">
+    <h1>Seratimas Enterprise</h1>
+    <p class="sub" data-i18n="login_sub">Quotation, Invoice &amp; Receipt</p>
+    <label><span data-i18n="username">Email address</span>
+      <input id="l-user" type="email" autocomplete="username" required></label>
+    <label><span data-i18n="password">Password</span>
+      <input id="l-pass" type="password" autocomplete="current-password" required></label>
+    <label class="check"><input type="checkbox" id="l-keep"><span data-i18n="keep">Keep me signed in on this device</span></label>
+    <div id="loginErr" class="err hidden"></div>
+    <button class="primary wide" type="submit" data-i18n="signin">Sign in</button>
+    <button type="button" id="btnLangLogin" class="linkbtn">Bahasa Melayu</button>
+  </form>
+</div>
+
+<header class="no-print">
+  <h1>Seratimas Enterprise</h1>
+  <nav>
+    <button data-view="list" class="active" data-i18n="nav_saved">Saved</button>
+    <button data-view="editor" id="navEditor" data-i18n="nav_editor">New / Edit</button>
+    <button data-view="settings" data-i18n="nav_company">Company</button>
+  </nav>
+  <span id="userName" class="user"></span>
+  <button type="button" id="btnLang" class="hbtn">BM</button>
+  <button type="button" id="btnLogout" class="hbtn" data-i18n="logout">Log out</button>
+  <span id="netStatus" class="badge">Online</span>
+</header>
+
+<main>
+  <!-- SAVED DOCUMENTS -->
+  <section id="view-list" class="view">
+    <div class="panel no-print">
+      <div class="toolbar">
+        <button class="primary" data-new="quotation" data-i18n="new_quotation">+ Quotation</button>
+        <button class="primary" data-new="invoice" data-i18n="new_invoice">+ Invoice</button>
+        <button class="primary" data-new="receipt" data-i18n="new_receipt">+ Receipt</button>
+        <span class="spacer"></span>
+        <select id="flt-type">
+          <option value="" data-i18n="all_types">All types</option>
+          <option value="quotation" data-i18n="quotations">Quotations</option>
+          <option value="invoice" data-i18n="invoices">Invoices</option>
+          <option value="receipt" data-i18n="receipts">Receipts</option>
+        </select>
+        <input id="flt-q" type="search" data-i18n-ph="search_ph" placeholder="Search number or client">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th data-i18n="th_number">Number</th><th data-i18n="th_type">Type</th>
+            <th data-i18n="th_client">Client</th><th data-i18n="th_date">Date</th>
+            <th class="r" data-i18n="th_total">Total</th><th class="r" data-i18n="th_actions">Actions</th>
+          </tr></thead>
+          <tbody id="listBody"></tbody>
+        </table>
+      </div>
+      <div class="toolbar">
+        <button id="btnExport" data-i18n="backup">Backup (download)</button>
+        <label class="btn"><span data-i18n="restore">Restore backup</span><input type="file" id="importFile" accept=".json" hidden></label>
+      </div>
+      <p class="hint" id="storageHint">Your documents are synchronised to your secure cloud database. Use Backup regularly.</p>
+    </div>
+  </section>
+
+  <!-- EDITOR -->
+  <section id="view-editor" class="view hidden">
+    <div class="editor-grid">
+      <form id="form" class="panel no-print" autocomplete="off" onsubmit="return false">
+        <div class="row">
+          <label><span data-i18n="f_type">Type</span>
+            <select id="f-type">
+              <option value="quotation" data-i18n="type_quotation">Quotation</option>
+              <option value="invoice" data-i18n="type_invoice">Invoice</option>
+              <option value="receipt" data-i18n="type_receipt">Receipt</option>
+            </select>
+          </label>
+          <label><span data-i18n="f_number">Number</span><input id="f-number"></label>
+        </div>
+        <div class="row">
+          <label><span data-i18n="f_date">Date</span><input type="date" id="f-date"></label>
+          <label id="lbl-due"><span id="lbl-due-text">Due date</span><input type="date" id="f-due"></label>
+        </div>
+        <div class="row">
+          <label><span data-i18n="f_ref">Reference (optional)</span><input id="f-ref" data-i18n-ph="f_ref_ph" placeholder="e.g. PO number or previous document"></label>
+          <label><span data-i18n="f_doclang">Document language</span>
+            <select id="f-lang">
+              <option value="en">English</option>
+              <option value="ms">Bahasa Melayu</option>
+            </select>
+          </label>
+        </div>
+
+        <h3 data-i18n="h_client">Client</h3>
+        <label><span data-i18n="f_name">Name</span><input id="f-cname"></label>
+        <label><span data-i18n="f_address">Address</span><textarea id="f-caddr" rows="2"></textarea></label>
+        <div class="row">
+          <label><span data-i18n="f_phone">Phone</span><input id="f-cphone"></label>
+          <label><span data-i18n="f_email">Email</span><input id="f-cemail" type="email"></label>
+        </div>
+
+        <h3 data-i18n="h_items">Items</h3>
+        <div class="item item-head"><span data-i18n="f_desc">Description</span><span data-i18n="f_qty">Qty</span><span data-i18n="f_price">Unit price</span><span></span></div>
+        <div id="items"></div>
+        <button type="button" id="addItem" data-i18n="add_item">+ Add item</button>
+
+        <div class="row">
+          <label><span data-i18n="f_discount">Discount (amount)</span><input id="f-discount" type="number" min="0" step="any"></label>
+          <label><span data-i18n="f_tax">Tax / SST (%)</span><input id="f-tax" type="number" min="0" step="any"></label>
+        </div>
+
+        <div id="receiptFields" class="row hidden">
+          <label><span data-i18n="f_paid">Payment date</span><input type="date" id="f-paid"></label>
+          <label><span data-i18n="f_method">Payment method</span><input id="f-method" data-i18n-ph="f_method_ph" placeholder="Cash / Bank transfer / Cheque"></label>
+        </div>
+
+        <label><span data-i18n="f_notes">Notes</span><textarea id="f-notes" rows="2"></textarea></label>
+        <label><span data-i18n="f_terms">Terms &amp; conditions</span><textarea id="f-terms" rows="3"></textarea></label>
+
+        <div class="toolbar">
+          <button type="button" class="primary" id="btnSave" data-i18n="save">Save</button>
+          <button type="button" id="btnPrint" data-i18n="print">Print / Save PDF</button>
+          <button type="button" id="btnToInvoice" class="hidden" data-i18n="make_invoice">Make Invoice</button>
+          <button type="button" id="btnToReceipt" class="hidden" data-i18n="make_receipt">Make Receipt</button>
+          <button type="button" id="btnBack" data-i18n="back">Back</button>
+        </div>
+      </form>
+
+      <div class="panel preview-panel">
+        <div id="paper" class="paper"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="view hidden">
+    <div class="panel narrow no-print">
+      <h3 data-i18n="h_company">Company details</h3>
+      <label><span data-i18n="s_name">Company name</span><input id="s-name"></label>
+      <label><span data-i18n="s_reg">Registration no.</span><input id="s-reg"></label>
+      <label><span data-i18n="f_address">Address</span><textarea id="s-address" rows="3"></textarea></label>
+      <div class="row">
+        <label><span data-i18n="f_phone">Phone</span><input id="s-phone"></label>
+        <label><span data-i18n="f_email">Email</span><input id="s-email"></label>
+      </div>
+      <div class="row">
+        <label><span data-i18n="s_currency">Currency symbol</span><input id="s-currency" placeholder="RM"></label>
+        <label><span data-i18n="s_tax">Default tax / SST (%)</span><input id="s-tax" type="number" min="0" step="any"></label>
+      </div>
+      <label><span data-i18n="s_bank">Bank details (shown on quotation and invoice)</span><textarea id="s-bank" rows="3"></textarea></label>
+      <label><span data-i18n="s_terms">Default terms &amp; conditions</span><textarea id="s-terms" rows="3"></textarea></label>
+      <label><span data-i18n="s_logo">Logo</span><input type="file" id="s-logo" accept="image/*"></label>
+      <div id="logoPreview"></div>
+      <div class="toolbar">
+        <button class="primary" id="btnSaveSettings" data-i18n="s_save">Save company details</button>
+        <button id="btnClearLogo" data-i18n="s_rmlogo">Remove logo</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="toast" class="toast hidden no-print"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
