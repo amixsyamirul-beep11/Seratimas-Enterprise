@@ -14,7 +14,7 @@
 <!-- LOGIN -->
 <div id="login" class="login-wrap no-print">
   <form id="loginForm" class="login-card" autocomplete="on">
-    <img src="icon.svg" class="login-icon" alt="">
+    <img id="loginLogo" src="icon.svg" class="login-icon" alt="">
     <h1>Seratimas Enterprise</h1>
     <p class="sub" data-i18n="login_sub">Quotation, Invoice &amp; Receipt</p>
     <label><span data-i18n="username">Email address</span>
@@ -24,6 +24,10 @@
     <label class="check"><input type="checkbox" id="l-keep"><span data-i18n="keep">Keep me signed in on this device</span></label>
     <div id="loginErr" class="err hidden"></div>
     <button class="primary wide" type="submit" data-i18n="signin">Sign in</button>
+    <div class="login-links">
+      <button type="button" id="btnForgot" class="linkbtn" data-i18n="forgot_password">Forgot password?</button>
+      <button type="button" id="btnCreateUser" class="linkbtn" data-i18n="create_user">Create account</button>
+    </div>
     <button type="button" id="btnLangLogin" class="linkbtn">Bahasa Melayu</button>
   </form>
 </div>
@@ -37,6 +41,7 @@
   </nav>
   <span id="userName" class="user"></span>
   <button type="button" id="btnLang" class="hbtn">BM</button>
+  <button type="button" id="btnSync" class="hbtn" data-i18n="sync" disabled>Sync</button>
   <button type="button" id="btnLogout" class="hbtn" data-i18n="logout">Log out</button>
   <span id="netStatus" class="badge">Online</span>
 </header>
@@ -128,7 +133,7 @@
         </div>
 
         <label><span data-i18n="f_notes">Notes</span><textarea id="f-notes" rows="2"></textarea></label>
-        <label><span data-i18n="f_terms">Terms &amp; conditions</span><textarea id="f-terms" rows="3"></textarea></label>
+        <label id="lbl-terms"><span data-i18n="f_terms">Terms &amp; conditions</span><textarea id="f-terms" rows="3"></textarea></label>
 
         <div class="toolbar">
           <button type="button" class="primary" id="btnSave" data-i18n="save">Save</button>

@@ -5,12 +5,15 @@ plus Cloud Firestore for documents, company settings and numbering counters.
 
 BEFORE DEPLOYING
 1. In Firebase Console > Authentication > Get started > Sign-in method, enable Email/Password.
-2. In Authentication > Users, add each authorised user's email and a temporary password.
-   The old browser-only usernames/passwords are not migrated; create Firebase accounts for users.
+2. Enable public account creation by leaving Email/Password enabled. Users can create accounts
+   from the login screen and request password reset emails.
 3. In Firestore Database, create the database.
 4. Open Firestore > Rules, replace the rules with the contents of firestore.rules, and Publish.
+   Every signed-in account can read and modify the shared Seratimas workspace.
 5. Deploy the complete doc-maker folder to Netlify. Do not deploy only index.html.
 6. Open the Netlify HTTPS URL and sign in with the Firebase user's email and password.
+Use the Sync button in the header to refresh this device from the shared Firebase workspace;
+pending cloud saves are completed before the refresh.
 
 DATA MIGRATION
 On the first successful sign-in for a Firebase account, this browser's existing LocalStorage

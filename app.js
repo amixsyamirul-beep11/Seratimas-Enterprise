@@ -1,5 +1,5 @@
 import { auth, db } from './firebase.js';
-import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js';
 import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, writeBatch } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
 
 'use strict';
@@ -9,6 +9,17 @@ const I18N = {
   en: {
     login_sub: 'Quotation, Invoice & Receipt', username: 'Email address', password: 'Password',
     keep: 'Keep me signed in on this device', signin: 'Sign in', logout: 'Log out',
+    forgot_password: 'Forgot password?', create_user: 'Create account',
+    reset_sent: 'Password reset email sent. Check your inbox.',
+    account_created: 'Account created. Loading your workspace…',
+    e_email_required: 'Enter your email address first.',
+    e_password_required: 'Enter a password of at least 6 characters.',
+    e_email_in_use: 'An account already exists for this email.',
+    e_invalid_email: 'Enter a valid email address.',
+    e_weak_password: 'Choose a stronger password with at least 6 characters.',
+    e_signup_disabled: 'Account creation is not enabled in Firebase Authentication.',
+    sync: 'Sync', syncing: 'Syncing…', t_synced: 'Firebase data synced',
+    e_sync: 'Could not sync Firebase data. Please check your connection and try again.',
     login_bad: 'Wrong username or password.', login_locked: 'Too many attempts. Try again in {n} seconds.',
     login_https: 'Login needs a secure page (https or localhost).',
     nav_saved: 'Saved', nav_editor: 'New / Edit', nav_company: 'Company',
@@ -46,6 +57,17 @@ const I18N = {
   ms: {
     login_sub: 'Sebut Harga, Invois & Resit', username: 'Alamat e-mel', password: 'Kata laluan',
     keep: 'Kekalkan log masuk pada peranti ini', signin: 'Log masuk', logout: 'Log keluar',
+    forgot_password: 'Lupa kata laluan?', create_user: 'Cipta akaun',
+    reset_sent: 'E-mel tetapan semula kata laluan telah dihantar. Semak peti masuk anda.',
+    account_created: 'Akaun dicipta. Memuatkan ruang kerja…',
+    e_email_required: 'Masukkan alamat e-mel anda dahulu.',
+    e_password_required: 'Masukkan kata laluan sekurang-kurangnya 6 aksara.',
+    e_email_in_use: 'Akaun untuk e-mel ini sudah wujud.',
+    e_invalid_email: 'Masukkan alamat e-mel yang sah.',
+    e_weak_password: 'Pilih kata laluan lebih kukuh sekurang-kurangnya 6 aksara.',
+    e_signup_disabled: 'Penciptaan akaun tidak diaktifkan dalam Firebase Authentication.',
+    sync: 'Segerakkan', syncing: 'Menyegerakkan…', t_synced: 'Data Firebase disegerakkan',
+    e_sync: 'Data Firebase tidak dapat disegerakkan. Sila periksa sambungan dan cuba lagi.',
     login_bad: 'Nama pengguna atau kata laluan salah.', login_locked: 'Terlalu banyak percubaan. Cuba lagi dalam {n} saat.',
     login_https: 'Log masuk memerlukan halaman selamat (https atau localhost).',
     nav_saved: 'Tersimpan', nav_editor: 'Baharu / Sunting', nav_company: 'Syarikat',
@@ -91,6 +113,7 @@ let firebaseUser = null;
 let cloudReady = false;
 let cloudWriteQueue = Promise.resolve();
 let knownCloudDocIds = new Set();
+let cloudSyncing = false;
 
 // All signed-in accounts use this one shared Firestore workspace.
 const SHARED_DOCS = collection(db, 'workspaces', 'seratimas', 'documents');
@@ -107,6 +130,14 @@ function enterApp(name) {
 function showLoginError(msg) {
   const e = $('#loginErr');
   e.textContent = msg;
+  e.classList.remove('notice');
+  e.classList.remove('hidden');
+}
+
+function showLoginNotice(msg) {
+  const e = $('#loginErr');
+  e.textContent = msg;
+  e.classList.add('notice');
   e.classList.remove('hidden');
 }
 
@@ -179,8 +210,10 @@ async function loadCloudWorkspace(user) {
   store.setLocal('settings', settings);
   store.setLocal('counters', counters);
   cloudReady = true;
+  updateLoginLogo();
   fillSettings();
   renderList();
+  if (current) renderPreview();
 }
 
 async function syncDocuments(items) {
@@ -245,6 +278,27 @@ function queueCloudSave(key, value) {
 
 function logout() { signOut(auth).catch(err => console.error('Sign-out failed:', err)); }
 
+async function syncNow() {
+  if (!firebaseUser || !cloudReady || cloudSyncing) return;
+  const user = firebaseUser;
+  cloudSyncing = true;
+  $('#btnSync').disabled = true;
+  $('#btnSync').textContent = t('syncing');
+  try {
+    await cloudWriteQueue;
+    if (firebaseUser !== user) return;
+    await loadCloudWorkspace(user);
+    if (firebaseUser === user) toast(t('t_synced'));
+  } catch (err) {
+    console.error('Firebase sync failed:', err);
+    toast(t('e_sync'));
+  } finally {
+    cloudSyncing = false;
+    $('#btnSync').disabled = !firebaseUser || !cloudReady;
+    $('#btnSync').textContent = t('sync');
+  }
+}
+
 /* ================= helpers ================= */
 function $(s, r = document) { return r.querySelector(s); }
 function $$(s, r = document) { return [...r.querySelectorAll(s)]; }
@@ -281,6 +335,10 @@ let settings = Object.assign(
   { name: '', regNo: '', address: '', phone: '', email: '', currency: 'RM', taxRate: 0, bank: '', terms: '', logo: '' },
   store.get('settings', {})
 );
+function updateLoginLogo() {
+  $('#loginLogo').src = settings.logo || 'icon.svg';
+}
+updateLoginLogo();
 if (!settings.name) { settings.name = 'Seratimas Enterprise'; store.set('settings', settings); }
 let current = null;
 
@@ -314,6 +372,7 @@ function applyLang() {
   $$('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   $('#btnLang').textContent = lang === 'ms' ? 'EN' : 'BM';
   $('#btnLangLogin').textContent = lang === 'ms' ? 'English' : 'Bahasa Melayu';
+  $('#btnSync').textContent = cloudSyncing ? t('syncing') : t('sync');
   updateNet();
   if (current) { toggleTypeFields(); renderPreview(); }
   renderList();
@@ -386,6 +445,7 @@ function toggleTypeFields() {
   $('#lbl-due-text').textContent = ty === 'quotation' ? t('f_valid') : t('f_due');
   $('#lbl-due').classList.toggle('hidden', ty === 'receipt');
   $('#receiptFields').classList.toggle('hidden', ty !== 'receipt');
+  $('#lbl-terms').classList.toggle('hidden', ty !== 'quotation');
   $('#btnToInvoice').classList.toggle('hidden', ty !== 'quotation');
   $('#btnToReceipt').classList.toggle('hidden', ty === 'receipt');
 }
@@ -504,7 +564,7 @@ function renderPreview() {
     <div class="p-foot">
       ${d.notes ? `<h4>${L('p_notes')}</h4><div class="pre">${esc(d.notes)}</div>` : ''}
       ${d.type !== 'receipt' && s.bank ? `<h4>${L('p_bank')}</h4><div class="pre">${esc(s.bank)}</div>` : ''}
-      ${d.terms ? `<h4>${L('p_terms')}</h4><div class="pre">${esc(d.terms)}</div>` : ''}
+      ${d.type === 'quotation' && d.terms ? `<h4>${L('p_terms')}</h4><div class="pre">${esc(d.terms)}</div>` : ''}
     </div>
     <div class="sign"><div>${d.type === 'quotation' ? L('p_accept') : L('p_recby')}</div><div>${L('p_sign')}</div></div>`;
 }
@@ -569,6 +629,7 @@ function handleLogo(file) {
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
       settings.logo = c.toDataURL('image/png');
       store.set('settings', settings);
+      updateLoginLogo();
       fillSettings();
       toast(t('t_logo'));
     };
@@ -609,7 +670,7 @@ function importBackup(file) {
 }
 
 /* ================= events ================= */
-// Firebase email/password sign-in. Create authorised users in Firebase Console.
+// Firebase email/password sign-in and public account creation.
 $('#loginForm').addEventListener('submit', async e => {
   e.preventDefault();
   const email = $('#l-user').value.trim();
@@ -632,7 +693,67 @@ $('#loginForm').addEventListener('submit', async e => {
     showLoginError(messages[err.code] || 'Unable to sign in. Please check your Firebase Authentication setup.');
   } finally { button.disabled = false; }
 });
+$('#btnForgot').addEventListener('click', async () => {
+  const emailInput = $('#l-user');
+  if (!emailInput.value.trim()) {
+    showLoginError(t('e_email_required'));
+    emailInput.focus();
+    return;
+  }
+  if (!emailInput.reportValidity()) return;
+  const button = $('#btnForgot');
+  button.disabled = true;
+  $('#loginErr').classList.add('hidden');
+  try {
+    await sendPasswordResetEmail(auth, emailInput.value.trim());
+    showLoginNotice(t('reset_sent'));
+  } catch (err) {
+    console.error('Password reset request failed:', err);
+    const messages = {
+      'auth/invalid-email': t('e_invalid_email'),
+      'auth/user-not-found': 'No account was found for this email address.',
+      'auth/too-many-requests': 'Too many attempts. Please try again later.',
+      'auth/network-request-failed': 'Network error. Check your internet connection.'
+    };
+    showLoginError(messages[err.code] || 'Unable to send a password reset email. Please try again.');
+  } finally { button.disabled = false; }
+});
+$('#btnCreateUser').addEventListener('click', async () => {
+  const emailInput = $('#l-user');
+  const passwordInput = $('#l-pass');
+  if (!emailInput.value.trim()) {
+    showLoginError(t('e_email_required'));
+    emailInput.focus();
+    return;
+  }
+  if (!emailInput.reportValidity()) return;
+  if (!passwordInput.value || passwordInput.value.length < 6) {
+    showLoginError(t('e_password_required'));
+    passwordInput.focus();
+    return;
+  }
+  const button = $('#btnCreateUser');
+  button.disabled = true;
+  $('#loginErr').classList.add('hidden');
+  try {
+    await createUserWithEmailAndPassword(auth, emailInput.value.trim(), passwordInput.value);
+    passwordInput.value = '';
+    showLoginNotice(t('account_created'));
+  } catch (err) {
+    console.error('Account creation failed:', err);
+    const messages = {
+      'auth/email-already-in-use': t('e_email_in_use'),
+      'auth/invalid-email': t('e_invalid_email'),
+      'auth/weak-password': t('e_weak_password'),
+      'auth/operation-not-allowed': t('e_signup_disabled'),
+      'auth/too-many-requests': 'Too many attempts. Please try again later.',
+      'auth/network-request-failed': 'Network error. Check your internet connection.'
+    };
+    showLoginError(messages[err.code] || 'Unable to create account. Please check your Firebase Authentication setup.');
+  } finally { button.disabled = false; }
+});
 $('#btnLogout').addEventListener('click', logout);
+$('#btnSync').addEventListener('click', syncNow);
 $('#btnLang').addEventListener('click', toggleLang);
 $('#btnLangLogin').addEventListener('click', toggleLang);
 
@@ -715,7 +836,7 @@ $('#btnToReceipt').addEventListener('click', () => { if (saveDoc()) convertDoc(c
 
 $('#btnSaveSettings').addEventListener('click', saveSettings);
 $('#s-logo').addEventListener('change', e => handleLogo(e.target.files[0]));
-$('#btnClearLogo').addEventListener('click', () => { settings.logo = ''; store.set('settings', settings); fillSettings(); });
+$('#btnClearLogo').addEventListener('click', () => { settings.logo = ''; store.set('settings', settings); updateLoginLogo(); fillSettings(); });
 $('#btnExport').addEventListener('click', exportBackup);
 $('#importFile').addEventListener('change', e => { importBackup(e.target.files[0]); e.target.value = ''; });
 
@@ -739,6 +860,7 @@ applyLang();
 onAuthStateChanged(auth, async user => {
   firebaseUser = user;
   cloudReady = false;
+  $('#btnSync').disabled = true;
   if (!user) {
     document.body.classList.add('locked');
     $('#userName').textContent = '';
@@ -747,6 +869,7 @@ onAuthStateChanged(auth, async user => {
   }
   try {
     await loadCloudWorkspace(user);
+    $('#btnSync').disabled = false;
     enterApp(user.email || 'User');
   } catch (err) {
     console.error('Unable to load Firebase workspace:', err);
