@@ -13,33 +13,48 @@
 
 <!-- LOGIN -->
 <div id="login" class="login-wrap no-print">
-  <form id="loginForm" class="login-card" autocomplete="on">
+  <div class="login-card">
     <img id="loginLogo" src="icon.svg" class="login-icon" alt="">
     <h1>Seratimas Enterprise</h1>
     <p class="sub" data-i18n="login_sub">Quotation, Invoice &amp; Receipt</p>
-    <label><span data-i18n="username">Email address</span>
-      <input id="l-user" type="email" autocomplete="username" required></label>
-    <label><span data-i18n="password">Password</span>
-      <input id="l-pass" type="password" autocomplete="current-password" required></label>
-    <label class="check"><input type="checkbox" id="l-keep"><span data-i18n="keep">Keep me signed in on this device</span></label>
     <div id="loginErr" class="err hidden"></div>
-    <button class="primary wide" type="submit" data-i18n="signin">Sign in</button>
-    <div class="login-links">
-      <button type="button" id="btnForgot" class="linkbtn" data-i18n="forgot_password">Forgot password?</button>
-      <button type="button" id="btnCreateUser" class="linkbtn" data-i18n="create_user">Create account</button>
-    </div>
+    <form id="loginForm" autocomplete="on">
+      <label><span data-i18n="username">Email address</span>
+        <input id="l-user" type="email" autocomplete="username" required></label>
+      <label><span data-i18n="password">Password</span>
+        <input id="l-pass" type="password" autocomplete="current-password" required></label>
+      <label class="check"><input type="checkbox" id="l-keep"><span data-i18n="keep">Keep me signed in on this device</span></label>
+      <button class="primary wide" type="submit" data-i18n="signin">Sign in</button>
+      <div class="login-links">
+        <button type="button" id="btnForgot" class="linkbtn" data-i18n="forgot_password">Forgot password?</button>
+        <button type="button" id="btnShowSignup" class="linkbtn" data-i18n="create_user">Create account</button>
+      </div>
+    </form>
+    <form id="signupForm" class="hidden" autocomplete="on">
+      <label><span data-i18n="profile_name">Name</span>
+        <input id="signupName" type="text" autocomplete="name" required></label>
+      <label><span data-i18n="username">Email address</span>
+        <input id="signupEmail" type="email" autocomplete="email" required></label>
+      <label><span data-i18n="password">Password</span>
+        <input id="signupPassword" type="password" autocomplete="new-password" minlength="6" required></label>
+      <label><span data-i18n="confirm_password">Confirm password</span>
+        <input id="signupConfirm" type="password" autocomplete="new-password" minlength="6" required></label>
+      <button class="primary wide" type="submit" data-i18n="register">Create account</button>
+      <button type="button" id="btnBackLogin" class="linkbtn" data-i18n="back_signin">Back to sign in</button>
+    </form>
     <button type="button" id="btnLangLogin" class="linkbtn">Bahasa Melayu</button>
-  </form>
+  </div>
 </div>
 
 <header class="no-print">
   <h1>Seratimas Enterprise</h1>
   <nav>
-    <button data-view="list" class="active" data-i18n="nav_saved">Saved</button>
-    <button data-view="editor" id="navEditor" data-i18n="nav_editor">New / Edit</button>
+    <button data-view="dashboard" class="active" data-i18n="nav_home">Home</button>
+    <button data-view="list" data-i18n="nav_saved">Saved</button>
     <button data-view="settings" data-i18n="nav_company">Company</button>
   </nav>
   <span id="userName" class="user"></span>
+  <button type="button" id="btnProfile" class="hbtn" data-i18n="profile">Profile</button>
   <button type="button" id="btnLang" class="hbtn">BM</button>
   <button type="button" id="btnSync" class="hbtn" data-i18n="sync" disabled>Sync</button>
   <button type="button" id="btnLogout" class="hbtn" data-i18n="logout">Log out</button>
@@ -47,13 +62,29 @@
 </header>
 
 <main>
+  <!-- HOME DASHBOARD -->
+  <section id="view-dashboard" class="view">
+    <div class="panel dashboard no-print">
+      <h2 data-i18n="dashboard_title">What would you like to do?</h2>
+      <p class="hint" data-i18n="dashboard_copy">Create a new document or open your saved documents.</p>
+      <div class="dashboard-actions">
+        <button type="button" class="dashboard-action primary" data-open-request>
+          <span class="dashboard-icon" aria-hidden="true">+</span>
+          <strong data-i18n="new_request">New Request</strong>
+        </button>
+        <button type="button" class="dashboard-action" id="btnEditDocuments">
+          <span class="dashboard-icon edit-icon" aria-hidden="true">✎</span>
+          <strong data-i18n="edit_documents">Edit</strong>
+        </button>
+      </div>
+    </div>
+  </section>
+
   <!-- SAVED DOCUMENTS -->
-  <section id="view-list" class="view">
+  <section id="view-list" class="view hidden">
     <div class="panel no-print">
       <div class="toolbar">
-        <button class="primary" data-new="quotation" data-i18n="new_quotation">+ Quotation</button>
-        <button class="primary" data-new="invoice" data-i18n="new_invoice">+ Invoice</button>
-        <button class="primary" data-new="receipt" data-i18n="new_receipt">+ Receipt</button>
+        <button class="primary" data-open-request data-i18n="new_request">New Request</button>
         <span class="spacer"></span>
         <select id="flt-type">
           <option value="" data-i18n="all_types">All types</option>
@@ -116,6 +147,7 @@
           <label><span data-i18n="f_phone">Phone</span><input id="f-cphone"></label>
           <label><span data-i18n="f_email">Email</span><input id="f-cemail" type="email"></label>
         </div>
+        <label><span data-i18n="f_title">Title (optional)</span><input id="f-title" data-i18n-ph="f_title_ph" placeholder="e.g. Project or service title"></label>
 
         <h3 data-i18n="h_items">Items</h3>
         <div class="item item-head"><span data-i18n="f_desc">Description</span><span data-i18n="f_qty">Qty</span><span data-i18n="f_price">Unit price</span><span></span></div>
@@ -138,6 +170,7 @@
         <div class="toolbar">
           <button type="button" class="primary" id="btnSave" data-i18n="save">Save</button>
           <button type="button" id="btnPrint" data-i18n="print">Print / Save PDF</button>
+          <button type="button" id="btnEditorSignature" data-i18n="a_signature">Add signature</button>
           <button type="button" id="btnToInvoice" class="hidden" data-i18n="make_invoice">Make Invoice</button>
           <button type="button" id="btnToReceipt" class="hidden" data-i18n="make_receipt">Make Receipt</button>
           <button type="button" id="btnBack" data-i18n="back">Back</button>
@@ -169,15 +202,63 @@
       <label><span data-i18n="s_terms">Default terms &amp; conditions</span><textarea id="s-terms" rows="3"></textarea></label>
       <label><span data-i18n="s_logo">Logo</span><input type="file" id="s-logo" accept="image/*"></label>
       <div id="logoPreview"></div>
+      <h3 data-i18n="s_signatures">Authorised signatures</h3>
+      <p class="hint" data-i18n="s_signatures_hint">Add each signer’s name, position, and signature image.</p>
+      <div id="signatureList"></div>
+      <div class="toolbar">
+        <button type="button" id="btnAddSigner" data-i18n="a_add_signer">+ Add signer</button>
+        <button type="button" class="primary" id="btnSaveSignatures" data-i18n="a_save_signatures">Save signatures</button>
+      </div>
       <div class="toolbar">
         <button class="primary" id="btnSaveSettings" data-i18n="s_save">Save company details</button>
         <button id="btnClearLogo" data-i18n="s_rmlogo">Remove logo</button>
       </div>
     </div>
   </section>
+
+  <!-- ACCOUNT PROFILE -->
+  <section id="view-profile" class="view hidden">
+    <div class="panel narrow no-print">
+      <h3 data-i18n="profile">Profile</h3>
+      <p class="hint"><span data-i18n="profile_email">Signed-in email</span>: <strong id="profileEmail"></strong></p>
+      <form id="profileNameForm">
+        <label><span data-i18n="profile_name">Name</span><input id="profileName" type="text" autocomplete="name" required></label>
+        <button type="submit" class="primary" data-i18n="save_name">Save name</button>
+      </form>
+      <h3 data-i18n="change_password">Change password</h3>
+      <form id="profilePasswordForm">
+        <label><span data-i18n="current_password">Current password</span><input id="currentPassword" type="password" autocomplete="current-password" required></label>
+        <label><span data-i18n="new_password">New password</span><input id="newPassword" type="password" autocomplete="new-password" minlength="6" required></label>
+        <label><span data-i18n="confirm_password">Confirm password</span><input id="changePasswordConfirm" type="password" autocomplete="new-password" minlength="6" required></label>
+        <button type="submit" class="primary" data-i18n="update_password">Update password</button>
+      </form>
+    </div>
+  </section>
 </main>
 
+<footer id="dashboardFooter" class="dashboard-footer hidden no-print">
+  <img id="dashboardLogo" src="icon.svg" alt="Company logo">
+</footer>
+
+<dialog id="requestDialog" class="request-dialog" aria-labelledby="requestDialogTitle">
+  <h2 id="requestDialogTitle" data-i18n="dialog_new_title">Choose a document to create</h2>
+  <div class="request-options">
+    <button type="button" data-create-type="quotation" data-i18n="create_quotation">Create Quotation</button>
+    <button type="button" data-create-type="invoice" data-i18n="create_invoice">Create Invoice</button>
+    <button type="button" data-create-type="receipt" data-i18n="create_receipt">Create Receipt</button>
+  </div>
+  <button type="button" id="btnCancelRequest" class="request-cancel" data-i18n="cancel">Cancel</button>
+</dialog>
+
+<dialog id="signatureDialog" class="request-dialog" aria-labelledby="signatureDialogTitle">
+  <h2 id="signatureDialogTitle" data-i18n="signature_dialog_title">Choose a signature</h2>
+  <div id="signatureChoices" class="signature-choices"></div>
+  <button type="button" id="btnRemoveDocumentSignature" class="request-cancel hidden" data-i18n="a_remove_signature">Remove signature from document</button>
+  <button type="button" id="btnCancelSignature" class="request-cancel" data-i18n="cancel">Cancel</button>
+</dialog>
+
 <div id="toast" class="toast hidden no-print"></div>
+<div id="welcomeToast" class="welcome-toast hidden no-print" role="status" aria-live="polite"></div>
 <script type="module" src="app.js"></script>
 </body>
 </html>

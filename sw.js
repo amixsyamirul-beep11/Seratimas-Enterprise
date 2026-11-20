@@ -1,6 +1,6 @@
 // Change the version number each time you update the app files,
 // so users' browsers download the new version.
-const CACHE = 'seratimas-v7';
+const CACHE = 'seratimas-v19';
 const ASSETS = ['./', 'index.html', 'style.css', 'app.js', 'manifest.json', 'icon.svg'];
 
 self.addEventListener('install', e => {
