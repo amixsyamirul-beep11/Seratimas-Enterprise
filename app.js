@@ -1226,21 +1226,33 @@ $('#items').addEventListener('click', e => {
 $('#items').addEventListener('keydown', e => {
   if (e.key !== 'Tab' || !e.target.matches('.it-desc')) return;
   e.preventDefault();
+
   const field = e.target;
   const start = field.selectionStart;
   const end = field.selectionEnd;
   const indent = '  ';
+  const blockStart = field.value.lastIndexOf('\n', start - 1) + 1;
+  const nextBreak = field.value.indexOf('\n', end);
+  const blockEnd = nextBreak === -1 ? field.value.length : nextBreak;
+  const selectedBlock = field.value.slice(blockStart, blockEnd);
+  const changedBlock = e.shiftKey
+    ? selectedBlock.replace(/^ {1,2}/gm, '')
+    : selectedBlock.replace(/^/gm, indent);
 
-  if (e.shiftKey) {
-    const lineStart = field.value.lastIndexOf('\n', start - 1) + 1;
-    const line = field.value.slice(lineStart, end);
-    const removed = line.replace(/^ {1,2}/gm, '');
-    field.value = field.value.slice(0, lineStart) + removed + field.value.slice(end);
-    const removedCount = line.length - removed.length;
-    field.selectionStart = field.selectionEnd = Math.max(lineStart, start - Math.min(2, removedCount));
+  field.value =
+    field.value.slice(0, blockStart) +
+    changedBlock +
+    field.value.slice(blockEnd);
+
+  if (start === end) {
+    const cursorOffset = e.shiftKey
+      ? -Math.min(2, selectedBlock.match(/^ */)?.[0].length || 0)
+      : indent.length;
+    const cursor = Math.max(blockStart, start + cursorOffset);
+    field.selectionStart = field.selectionEnd = cursor;
   } else {
-    field.value = field.value.slice(0, start) + indent + field.value.slice(end);
-    field.selectionStart = field.selectionEnd = start + indent.length;
+    field.selectionStart = blockStart;
+    field.selectionEnd = blockStart + changedBlock.length;
   }
 
   field.dispatchEvent(new Event('input', { bubbles: true }));
