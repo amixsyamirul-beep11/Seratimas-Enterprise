@@ -56,7 +56,7 @@ const I18N = {
     f_ref: 'Reference (optional)', f_ref_ph: 'e.g. PO number or previous document', f_doclang: 'Document language',
     h_client: 'Client', f_name: 'Name', f_address: 'Address', f_phone: 'Phone', f_email: 'Email',
     f_title: 'Title (optional)', f_title_ph: 'e.g. Project or service title',
-    h_items: 'Items', f_desc: 'Description', f_qty: 'Qty', f_price: 'Unit price', add_item: '+ Add item',
+    h_items: 'Items', f_desc: 'Description', f_qty: 'Qty', f_unit: 'Unit', f_price: 'Unit price', add_item: '+ Add item',
     f_discount: 'Discount (amount)', f_tax: 'Tax / SST (%)', f_paid: 'Payment date', f_method: 'Payment method',
     f_method_ph: 'Cash / Bank transfer / Cheque', f_notes: 'Notes', f_terms: 'Terms & conditions',
     save: 'Save', print: 'Print / Save PDF', make_invoice: 'Make Invoice', make_receipt: 'Make Receipt', back: 'Back',
@@ -140,7 +140,7 @@ const I18N = {
     f_ref: 'Rujukan (pilihan)', f_ref_ph: 'cth. No. PO atau dokumen terdahulu', f_doclang: 'Bahasa dokumen',
     h_client: 'Pelanggan', f_name: 'Nama', f_address: 'Alamat', f_phone: 'Telefon', f_email: 'E-mel',
     f_title: 'Tajuk (pilihan)', f_title_ph: 'cth. Tajuk projek atau perkhidmatan',
-    h_items: 'Item', f_desc: 'Perihal', f_qty: 'Kts', f_price: 'Harga seunit', add_item: '+ Tambah item',
+    h_items: 'Item', f_desc: 'Perihal', f_qty: 'Kts', f_unit: 'Unit', f_price: 'Harga seunit', add_item: '+ Tambah item',
     f_discount: 'Diskaun (jumlah)', f_tax: 'Cukai / SST (%)', f_paid: 'Tarikh bayaran', f_method: 'Kaedah bayaran',
     f_method_ph: 'Tunai / Pindahan bank / Cek', f_notes: 'Catatan', f_terms: 'Terma & syarat',
     save: 'Simpan', print: 'Cetak / Simpan PDF', make_invoice: 'Buat Invois', make_receipt: 'Buat Resit', back: 'Kembali',
@@ -553,7 +553,7 @@ function newDoc(type) {
     id: uid(), type, number: makeNumber(type), date: todayStr(), due: '', ref: '', lang,
     client: { name: '', address: '', phone: '', email: '' },
     title: '',
-    items: [{ desc: '', qty: 1, price: 0 }],
+    items: [{ desc: '', qty: 1, unit: '', price: 0 }],
     discount: 0, taxRate: settings.taxRate || 0,
     notes: '', terms: settings.terms || '',
     paid: type === 'receipt' ? todayStr() : '', method: '',
@@ -613,8 +613,9 @@ function toggleTypeFields() {
 function renderItems() {
   $('#items').innerHTML = current.items.map((it, i) => `
     <div class="item" data-i="${i}">
-      <input class="it-desc" placeholder="${esc(t('f_desc'))}" value="${esc(it.desc)}">
+      <textarea class="it-desc" rows="2" placeholder="${esc(t('f_desc'))}">${esc(it.desc)}</textarea>
       <input class="it-qty" type="number" min="0" step="any" value="${esc(it.qty)}">
+      <input class="it-unit" placeholder="${esc(t('f_unit'))}" value="${esc(it.unit || '')}">
       <input class="it-price" type="number" min="0" step="any" value="${esc(it.price)}">
       <button type="button" class="del" data-del="${i}" title="&times;">&#10005;</button>
     </div>`).join('');
@@ -634,7 +635,7 @@ function readForm() {
   };
   d.title = $('#f-title').value.trim();
   d.items = $$('#items .item').map(r => ({
-    desc: $('.it-desc', r).value, qty: $('.it-qty', r).value, price: $('.it-price', r).value
+    desc: $('.it-desc', r).value, qty: $('.it-qty', r).value, unit: $('.it-unit', r).value.trim(), price: $('.it-price', r).value
   }));
   d.discount = $('#f-discount').value;
   d.taxRate = $('#f-tax').value;
@@ -674,7 +675,7 @@ function renderPreview() {
   const rows = d.items.map((it, i) => {
     const amt = (+it.qty || 0) * (+it.price || 0);
     return `<tr><td>${i + 1}</td><td class="pre">${esc(it.desc)}</td><td class="r">${esc(it.qty)}</td>
-      <td class="r">${money(it.price)}</td><td class="r">${money(amt)}</td></tr>`;
+      <td class="c">${esc(it.unit || '')}</td><td class="r">${money(it.price)}</td><td class="r">${money(amt)}</td></tr>`;
   }).join('');
 
   const receiptBlock = d.type === 'receipt' ? `
@@ -714,7 +715,7 @@ function renderPreview() {
     ${d.title ? `<div class="p-subject">${esc(d.title)}</div>` : ''}
     <table>
       <thead><tr><th style="width:30px">#</th><th>${L('f_desc')}</th><th class="r" style="width:60px">${L('f_qty')}</th>
-        <th class="r" style="width:100px">${L('f_price')}</th><th class="r" style="width:110px">${L('p_amount')}</th></tr></thead>
+        <th class="c" style="width:60px">${L('f_unit')}</th><th class="r" style="width:100px">${L('f_price')}</th><th class="r" style="width:110px">${L('p_amount')}</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <div class="p-tot">
@@ -1205,7 +1206,7 @@ $('#f-type').addEventListener('change', e => {
 
 $('#addItem').addEventListener('click', () => {
   readForm();
-  current.items.push({ desc: '', qty: 1, price: 0 });
+  current.items.push({ desc: '', qty: 1, unit: '', price: 0 });
   renderItems();
   renderPreview();
   const last = $$('#items .it-desc').pop();
@@ -1217,9 +1218,32 @@ $('#items').addEventListener('click', e => {
   if (!b) return;
   readForm();
   current.items.splice(+b.dataset.del, 1);
-  if (!current.items.length) current.items.push({ desc: '', qty: 1, price: 0 });
+  if (!current.items.length) current.items.push({ desc: '', qty: 1, unit: '', price: 0 });
   renderItems();
   renderPreview();
+});
+
+$('#items').addEventListener('keydown', e => {
+  if (e.key !== 'Tab' || !e.target.matches('.it-desc')) return;
+  e.preventDefault();
+  const field = e.target;
+  const start = field.selectionStart;
+  const end = field.selectionEnd;
+  const indent = '  ';
+
+  if (e.shiftKey) {
+    const lineStart = field.value.lastIndexOf('\n', start - 1) + 1;
+    const line = field.value.slice(lineStart, end);
+    const removed = line.replace(/^ {1,2}/gm, '');
+    field.value = field.value.slice(0, lineStart) + removed + field.value.slice(end);
+    const removedCount = line.length - removed.length;
+    field.selectionStart = field.selectionEnd = Math.max(lineStart, start - Math.min(2, removedCount));
+  } else {
+    field.value = field.value.slice(0, start) + indent + field.value.slice(end);
+    field.selectionStart = field.selectionEnd = start + indent.length;
+  }
+
+  field.dispatchEvent(new Event('input', { bubbles: true }));
 });
 
 $('#btnSave').addEventListener('click', saveDoc);

@@ -38,6 +38,7 @@ table{width:100%;border-collapse:collapse}
 th,td{padding:8px;border-bottom:1px solid #e8e4d8;text-align:left;vertical-align:middle}
 th{background:#faf8f3;font-size:12px;color:#5b574a}
 .r{text-align:right}
+.c{text-align:center}
 .actions-cell{white-space:nowrap}
 .actions-cell button{padding:4px 8px;font-size:12px;margin-left:2px}
 .empty{text-align:center;color:#7a7566;padding:24px}
@@ -61,8 +62,9 @@ th{background:#faf8f3;font-size:12px;color:#5b574a}
 .request-options button{text-align:left;padding:13px 16px;font-weight:600}
 .request-options button:hover{border-color:var(--pri);background:#f4f2ec}
 .request-cancel{margin-top:16px}
-.item{display:grid;grid-template-columns:1fr 60px 90px 32px;gap:6px;margin-bottom:6px}
+.item{display:grid;grid-template-columns:minmax(120px,1fr) 60px 60px 90px 32px;gap:6px;margin-bottom:6px;align-items:start}
 .item input{margin:0}
+.item textarea.it-desc{margin:0;min-height:54px;resize:vertical;line-height:1.4}
 .item-head{font-size:11px;color:#7a7566;margin-bottom:2px}
 .item .del{padding:0;color:#dc2626}
 .preview-panel{background:#e6e2d6;padding:12px;overflow:auto}
@@ -73,7 +75,7 @@ th{background:#faf8f3;font-size:12px;color:#5b574a}
 .co-name{font-size:17px}
 .p-title{text-align:right}
 .p-title h2{margin:0 0 4px;font-size:26px;color:var(--pri);letter-spacing:1px}
-.pre{white-space:pre-line}
+.pre{white-space:pre-wrap}
 .p-to{margin-bottom:16px}
 .p-to .lbl{font-size:11px;color:#7a7566;text-transform:uppercase}
 .p-subject{margin:0 0 16px;font-size:16px;font-weight:700;line-height:1.35;overflow-wrap:anywhere}
